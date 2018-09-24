@@ -28,7 +28,7 @@ import java.net.NetworkInterface;
  * of {@link ChannelConfig} and may depend on the nature of the transport it belongs
  * to.
  *
- * @param <T>   the type of the value which is valid for the {@link ChannelOption}
+ * @param <T> the type of the value which is valid for the {@link ChannelOption}
  */
 public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
 
@@ -44,7 +44,7 @@ public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
      */
     @SuppressWarnings("unchecked")
     public static <T> ChannelOption<T> valueOf(String name) {
-        return (ChannelOption<T>) pool.valueOf(name);
+        return (ChannelOption<T>)pool.valueOf(name);
     }
 
     /**
@@ -52,7 +52,7 @@ public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
      */
     @SuppressWarnings("unchecked")
     public static <T> ChannelOption<T> valueOf(Class<?> firstNameComponent, String secondNameComponent) {
-        return (ChannelOption<T>) pool.valueOf(firstNameComponent, secondNameComponent);
+        return (ChannelOption<T>)pool.valueOf(firstNameComponent, secondNameComponent);
     }
 
     /**
@@ -68,7 +68,7 @@ public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
      */
     @SuppressWarnings("unchecked")
     public static <T> ChannelOption<T> newInstance(String name) {
-        return (ChannelOption<T>) pool.newInstance(name);
+        return (ChannelOption<T>)pool.newInstance(name);
     }
 
     public static final ChannelOption<ByteBufAllocator> ALLOCATOR = valueOf("ALLOCATOR");
@@ -93,7 +93,7 @@ public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
     @Deprecated
     public static final ChannelOption<Integer> WRITE_BUFFER_LOW_WATER_MARK = valueOf("WRITE_BUFFER_LOW_WATER_MARK");
     public static final ChannelOption<WriteBufferWaterMark> WRITE_BUFFER_WATER_MARK =
-            valueOf("WRITE_BUFFER_WATER_MARK");
+        valueOf("WRITE_BUFFER_WATER_MARK");
 
     public static final ChannelOption<Boolean> ALLOW_HALF_CLOSURE = valueOf("ALLOW_HALF_CLOSURE");
     public static final ChannelOption<Boolean> AUTO_READ = valueOf("AUTO_READ");
@@ -119,14 +119,20 @@ public class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
     public static final ChannelOption<Integer> IP_MULTICAST_TTL = valueOf("IP_MULTICAST_TTL");
     public static final ChannelOption<Boolean> IP_MULTICAST_LOOP_DISABLED = valueOf("IP_MULTICAST_LOOP_DISABLED");
 
+    /**
+     * TCP/IP协议中针对TCP默认开启了Nagle算法。Nagle算法通过减少需要传输的数据包，来优化网络。在内核实现中，数据包的发送和接受会先做缓存，分别对应于写缓存和读缓存
+     * no delay, 非延迟允许小包的发送。对于延时敏感型，同时数据传输量比较小的应用，开启TCP_NODELAY选项无疑是一个正确的选择
+     * 对于关闭TCP_NODELAY，则是应用了Nagle算法。数据只有在写缓存中累积到一定量之后，才会被发送出去，这样明显提高了网络利用率（实际传输数据payload与协议头的比例大大提高）。
+     * 但是这由不可避免地增加了延时
+     */
     public static final ChannelOption<Boolean> TCP_NODELAY = valueOf("TCP_NODELAY");
 
     @Deprecated
     public static final ChannelOption<Boolean> DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION =
-            valueOf("DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION");
+        valueOf("DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION");
 
     public static final ChannelOption<Boolean> SINGLE_EVENTEXECUTOR_PER_GROUP =
-            valueOf("SINGLE_EVENTEXECUTOR_PER_GROUP");
+        valueOf("SINGLE_EVENTEXECUTOR_PER_GROUP");
 
     /**
      * Creates a new {@link ChannelOption} with the specified unique {@code name}.
