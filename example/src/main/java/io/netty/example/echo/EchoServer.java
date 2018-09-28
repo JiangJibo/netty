@@ -58,7 +58,8 @@ public final class EchoServer {
 
         // Configure the server.
         // 创建两个 EventLoopGroup 对象
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1); // 创建 boss 线程组 用于服务端接受客户端的连接
+        // 创建 boss 线程组 用于服务端接受客户端的连接, 若未指定线程数则默认为物理线程数*2,对于bossGroup最好是指定初始化线程数为1
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup(); // 创建 worker 线程组 用于进行 SocketChannel 的数据读写
 
 //        ((NioEventLoop) workerGroup.next()).threadProperties();

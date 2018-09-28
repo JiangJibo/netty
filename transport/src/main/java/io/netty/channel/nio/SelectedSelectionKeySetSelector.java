@@ -27,7 +27,8 @@ import java.util.Set;
 final class SelectedSelectionKeySetSelector extends Selector {
 
     /**
-     * SelectedSelectionKeySet 对象
+     * SelectedSelectionKeySet 对象, 这个对象实际引用的是 {@link sun.nio.ch.SelectorImpl#selectedKeys}
+     * 在 {@link NioEventLoop#openSelector()} 里通过反射赋值给 {@link #delegate}
      */
     private final SelectedSelectionKeySet selectionKeys;
     /**

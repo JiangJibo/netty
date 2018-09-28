@@ -20,6 +20,10 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Iterator;
 
+/**
+ * 继承自Set,实例化一个对昂,然后设置到{@link sun.nio.ch.SelectorImpl#selectedKeys}中
+ * 重写{@link this#add(SelectionKey)} 等方法,实时的获取Selector选择到的SelectionKey
+ */
 final class SelectedSelectionKeySet extends AbstractSet<SelectionKey> {
 
     /**

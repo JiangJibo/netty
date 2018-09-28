@@ -211,7 +211,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @param executor          the {@link Executor} which will be used for executing
      * @param addTaskWakesUp    {@code true} if and only if invocation of {@link #addTask(Runnable)} will wake up the
      *                          executor thread
-     * @param maxPendingTasks   the maximum number of pending tasks before new tasks will be rejected.
+     * @param maxPendingTasks   the maximum number of pending tasks before new tasks will be rejected. 默认值{@link Integer#MAX_VALUE}
      * @param rejectedHandler   the {@link RejectedExecutionHandler} to use.
      */
     protected SingleThreadEventExecutor(EventExecutorGroup parent, Executor executor,

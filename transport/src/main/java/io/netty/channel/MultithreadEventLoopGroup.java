@@ -38,6 +38,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     /**
      * 默认 EventLoop 线程数
+     * 物理线程数*2
      */
     private static final int DEFAULT_EVENT_LOOP_THREADS;
 
@@ -50,6 +51,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     }
 
     /**
+     * @param nThreads
+     * @param executor
+     * @param args
      * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, Object...)
      */
     protected MultithreadEventLoopGroup(int nThreads, Executor executor, Object... args) {
@@ -64,6 +68,10 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     }
 
     /**
+     * @param nThreads
+     * @param executor
+     * @param chooserFactory
+     * @param args
      * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor,
      * EventExecutorChooserFactory, Object...)
      */
@@ -78,7 +86,7 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     @Override
     public EventLoop next() {
-        return (EventLoop) super.next();
+        return (EventLoop)super.next();
     }
 
     @Override
