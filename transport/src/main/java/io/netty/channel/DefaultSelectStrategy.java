@@ -15,6 +15,8 @@
  */
 package io.netty.channel;
 
+import java.nio.channels.Selector;
+
 import io.netty.util.IntSupplier;
 
 /**
@@ -31,6 +33,15 @@ final class DefaultSelectStrategy implements SelectStrategy {
 
     private DefaultSelectStrategy() { }
 
+    /**
+     * 如果当前有任务未执行结束,则返回如果通过{@link Selector#selectNow()},也就是不会再继续Select
+     * 如果任务，则执行select
+     *
+     * @param selectSupplier The supplier with the result of a select result.
+     * @param hasTasks       true if tasks are waiting to be processed.
+     * @return
+     * @throws Exception
+     */
     @Override
     public int calculateStrategy(IntSupplier selectSupplier, boolean hasTasks) throws Exception {
         return hasTasks ? selectSupplier.get() : SelectStrategy.SELECT;
