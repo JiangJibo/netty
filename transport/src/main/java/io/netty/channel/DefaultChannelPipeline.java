@@ -190,6 +190,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return new DefaultChannelHandlerContext(this, childExecutor(group), name, handler);
     }
 
+    /**
+     * 默认情况下相同Channel属于EventLoopGroup里特定的EventLoop,也就是每次Read时用的是相同的EventExecutor,相同的执行线程
+     *
+     * @param group
+     * @return
+     */
     private EventExecutor childExecutor(EventExecutorGroup group) {
         // 不创建子执行器
         if (group == null) {
