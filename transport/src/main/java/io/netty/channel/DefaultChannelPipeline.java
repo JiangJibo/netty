@@ -195,8 +195,9 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         if (group == null) {
             return null;
         }
-        // 根据配置项 SINGLE_EVENTEXECUTOR_PER_GROUP ，每个 Channel 从 EventExecutorGroup 获得不同 EventExecutor 执行器
+        // 是否设置了一个Group里只有一个EventExecutor,也就是EventLoopGroup里只有一个EventLoop
         Boolean pinEventExecutor = channel.config().getOption(ChannelOption.SINGLE_EVENTEXECUTOR_PER_GROUP);
+        // 如果不是，则按顺序返回下一个Executor数组的下一个
         if (pinEventExecutor != null && !pinEventExecutor) {
             return group.next();
         }
