@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
- *
  */
 public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerChannel> {
 
@@ -152,6 +151,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         return this;
     }
 
+    /**
+     * 使用Handler,Option等初始化Channel,同时添加一个ChannelHandler,在可读时将此Channel注册到Worker EventLoop
+     * 也就是注册到EventLoop内部的Selector上
+     *
+     * @param channel
+     * @throws Exception
+     */
     @Override
     void init(Channel channel) throws Exception {
         // 初始化 Channel 的可选项集合
@@ -163,9 +169,9 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         // 初始化 Channel 的属性集合
         final Map<AttributeKey<?>, Object> attrs = attrs0();
         synchronized (attrs) {
-            for (Entry<AttributeKey<?>, Object> e: attrs.entrySet()) {
+            for (Entry<AttributeKey<?>, Object> e : attrs.entrySet()) {
                 @SuppressWarnings("unchecked")
-                AttributeKey<Object> key = (AttributeKey<Object>) e.getKey();
+                AttributeKey<Object> key = (AttributeKey<Object>)e.getKey();
                 channel.attr(key).set(e.getValue());
             }
         }
@@ -205,7 +211,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                     public void run() {
                         System.out.println(Thread.currentThread() + ": ServerBootstrapAcceptor");
                         pipeline.addLast(new ServerBootstrapAcceptor(
-                                ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
+                            ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
                 });
             }
@@ -248,8 +254,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         private final Runnable enableAutoReadTask;
 
         ServerBootstrapAcceptor(
-                final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
-                Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
+            final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
+            Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
             this.childGroup = childGroup;
             this.childHandler = childHandler;
             this.childOptions = childOptions;
@@ -274,14 +280,14 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             // 老艿艿：如下的注释，先暂时认为是接受的客户端的 NioSocketChannel
 
             // 接受的客户端的 NioSocketChannel 对象
-            final Channel child = (Channel) msg;
+            final Channel child = (Channel)msg;
             // 添加 NioSocketChannel 的处理器
             child.pipeline().addLast(childHandler);
             // 设置 NioSocketChannel 的配置项
             setChannelOptions(child, childOptions, logger);
             // 设置 NioSocketChannel 的属性
-            for (Entry<AttributeKey<?>, Object> e: childAttrs) {
-                child.attr((AttributeKey<Object>) e.getKey()).set(e.getValue());
+            for (Entry<AttributeKey<?>, Object> e : childAttrs) {
+                child.attr((AttributeKey<Object>)e.getKey()).set(e.getValue());
             }
 
             try {

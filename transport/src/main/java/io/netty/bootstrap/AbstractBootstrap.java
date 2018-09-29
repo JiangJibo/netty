@@ -26,6 +26,7 @@ import io.netty.channel.DefaultChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ReflectiveChannelFactory;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.internal.SocketUtils;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
@@ -109,7 +110,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     @SuppressWarnings("unchecked")
     private B self() {
-        return (B) this;
+        return (B)this;
     }
 
     /**
@@ -147,9 +148,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * has a no-args constructor, its highly recommend to just use {@link #channel(Class)} to
      * simplify your code.
      */
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({"unchecked", "deprecation"})
     public B channelFactory(io.netty.channel.ChannelFactory<? extends C> channelFactory) {
-        return channelFactory((ChannelFactory<C>) channelFactory);
+        return channelFactory((ChannelFactory<C>)channelFactory);
     }
 
     /**
@@ -339,12 +340,19 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
     }
 
+    /**
+     * 通过{@link ReflectiveChannelFactory#newChannel()},反射生成一个{@link NioSocketChannel}
+     * 注册到Boss的EventLoopGroup上,同时给Channel添加一个Handler,在可读时注册到Worker的EventLoopGroup
+     *
+     * @return
+     */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
             // 创建 Channel 对象
             channel = channelFactory.newChannel();
-            // 初始化 Channel 配置
+            // 初始化 Channel 配置, 使用Handler,Option,Attr配置Channel
+            // 如果是Server,顺带加上一个ChannelHandler,在第一次可读时将Channel注册到WorkerEventLoop上
             init(channel);
         } catch (Throwable t) {
             if (channel != null) { // 已创建 Channel 对象
@@ -357,7 +365,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
-        // 注册 Channel 到 EventLoopGroup 中
+        // 注册 Channel 到 EventLoopGroup 中,
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
@@ -381,9 +389,17 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     abstract void init(Channel channel) throws Exception;
 
+    /**
+     * 指定ChannelHandlerPipeline的bind()事件链
+     *
+     * @param regFuture
+     * @param channel
+     * @param localAddress
+     * @param promise
+     */
     private static void doBind0(
-            final ChannelFuture regFuture, final Channel channel,
-            final SocketAddress localAddress, final ChannelPromise promise) {
+        final ChannelFuture regFuture, final Channel channel,
+        final SocketAddress localAddress, final ChannelPromise promise) {
 
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
@@ -393,8 +409,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                 System.out.println(Thread.currentThread() + ": bind");
                 // 注册成功，绑定端口
                 if (regFuture.isSuccess()) {
+                    // 调用ChannelHandlerPipeline的bind()链
                     channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-                // 注册失败，回调通知 promise 异常
+                    // 注册失败，回调通知 promise 异常
                 } else {
                     promise.setFailure(regFuture.cause());
                 }
@@ -470,29 +487,29 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     static void setChannelOptions(
-            Channel channel, Map<ChannelOption<?>, Object> options, InternalLogger logger) {
-        for (Map.Entry<ChannelOption<?>, Object> e: options.entrySet()) {
+        Channel channel, Map<ChannelOption<?>, Object> options, InternalLogger logger) {
+        for (Map.Entry<ChannelOption<?>, Object> e : options.entrySet()) {
             setChannelOption(channel, e.getKey(), e.getValue(), logger);
         }
     }
 
     static void setChannelOptions(
-            Channel channel, Map.Entry<ChannelOption<?>, Object>[] options, InternalLogger logger) {
-        for (Map.Entry<ChannelOption<?>, Object> e: options) {
+        Channel channel, Map.Entry<ChannelOption<?>, Object>[] options, InternalLogger logger) {
+        for (Map.Entry<ChannelOption<?>, Object> e : options) {
             setChannelOption(channel, e.getKey(), e.getValue(), logger);
         }
     }
 
     @SuppressWarnings("unchecked")
     private static void setChannelOption(
-            Channel channel, ChannelOption<?> option, Object value, InternalLogger logger) {
+        Channel channel, ChannelOption<?> option, Object value, InternalLogger logger) {
         try {
-            if (!channel.config().setOption((ChannelOption<Object>) option, value)) {
+            if (!channel.config().setOption((ChannelOption<Object>)option, value)) {
                 logger.warn("Unknown channel option '{}' for channel '{}'", option, channel);
             }
         } catch (Throwable t) {
             logger.warn(
-                    "Failed to set channel option '{}' with value '{}' for channel '{}'", option, value, channel, t);
+                "Failed to set channel option '{}' with value '{}' for channel '{}'", option, value, channel, t);
         }
     }
 
