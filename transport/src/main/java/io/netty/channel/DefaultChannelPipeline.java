@@ -191,7 +191,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     /**
-     * 默认情况下相同Channel属于EventLoopGroup里特定的EventLoop,也就是每次Read时用的是相同的EventExecutor,相同的执行线程
+     * 默认情况下相同Channel每次Read/Write时用的是相同的EventExecutor,相同的执行线程
      *
      * @param group
      * @return
