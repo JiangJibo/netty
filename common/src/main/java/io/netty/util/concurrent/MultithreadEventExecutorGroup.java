@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
 
     /**
-     * EventExecutor 数组
+     * EventExecutor 数组, 实际就是 NioEventLoop
      */
     private final EventExecutor[] children;
     /**
