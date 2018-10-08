@@ -566,7 +566,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         // 处理 Channel 感兴趣的就绪 IO 事件
                         processSelectedKeys();
                     } finally {
-                        // 运行所有普通任务和定时任务，限制时间
+                        // 运行所有普通任务和定时任务，限制时间, ioRatio 默认50,也就是处理IO时间和task时间相等
                         // Ensure we always run tasks.
                         final long ioTime = System.nanoTime() - ioStartTime;
                         runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
@@ -684,6 +684,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    /**
+     * 处理经过优化的SelectedKeys
+     */
     private void processSelectedKeysOptimized() {
         // 遍历数组
         for (int i = 0; i < selectedKeys.size; ++i) {
@@ -936,8 +939,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     // timeoutMillis elapsed without anything selected.
                     selectCnt = 1;
                     // 不符合 select 超时的提交，若 select 次数到达重建 Selector 对象的上限，进行重建
-                } else if (SELECTOR_AUTO_REBUILD_THRESHOLD > 0 &&
-                    selectCnt >= SELECTOR_AUTO_REBUILD_THRESHOLD) {
+                } else if (SELECTOR_AUTO_REBUILD_THRESHOLD > 0 && selectCnt >= SELECTOR_AUTO_REBUILD_THRESHOLD) {
                     // The selector returned prematurely many times in a row.
                     // Rebuild the selector to work around the problem.
                     logger.warn("Selector.select() returned prematurely {} times in a row; rebuilding Selector {}.", selectCnt, selector);
