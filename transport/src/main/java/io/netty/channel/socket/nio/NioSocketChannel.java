@@ -402,10 +402,10 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                 return;
             }
 
-            // 获得每次写入的最大字节数
+            // 获得每次可写入的最大字节数, 默认Integer.MAX_VALUE
             // Ensure the pending writes are made of ByteBufs only.
             int maxBytesPerGatheringWrite = ((NioSocketChannelConfig) config).getMaxBytesPerGatheringWrite();
-            // 从内存队列中，获得要写入的 ByteBuffer 数组
+            // 从内存队列中，获得要写入的 ByteBuffer 数组, 也就是ChannelOutboundBuffer#flushedEntry 每个节点的 buf/bufs 数组集合
             ByteBuffer[] nioBuffers = in.nioBuffers(1024, maxBytesPerGatheringWrite);
             // 写入的 ByteBuffer 数组的个数
             int nioBufferCnt = in.nioBufferCount();
