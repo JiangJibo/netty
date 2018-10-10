@@ -21,6 +21,7 @@ import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOutboundBuffer;
+import io.netty.channel.ChannelOutboundBuffer.Entry;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.FileRegion;
@@ -97,8 +98,8 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
     /**
      * Create a new instance
      *
-     * @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
-     * @param socket    the {@link SocketChannel} which will be used
+     * @param parent the {@link Channel} which created this instance or {@code null} if it was created by the user
+     * @param socket the {@link SocketChannel} which will be used
      */
     public NioSocketChannel(Channel parent, SocketChannel socket) {
         super(parent, socket);
@@ -107,7 +108,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     @Override
     public ServerSocketChannel parent() {
-        return (ServerSocketChannel) super.parent();
+        return (ServerSocketChannel)super.parent();
     }
 
     @Override
@@ -117,7 +118,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     @Override
     protected SocketChannel javaChannel() {
-        return (SocketChannel) super.javaChannel();
+        return (SocketChannel)super.javaChannel();
     }
 
     @Override
@@ -144,12 +145,12 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     @Override
     public InetSocketAddress localAddress() {
-        return (InetSocketAddress) super.localAddress();
+        return (InetSocketAddress)super.localAddress();
     }
 
     @Override
     public InetSocketAddress remoteAddress() {
-        return (InetSocketAddress) super.remoteAddress();
+        return (InetSocketAddress)super.remoteAddress();
     }
 
     @UnstableApi
@@ -171,12 +172,12 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
     public ChannelFuture shutdownOutput(final ChannelPromise promise) {
         final EventLoop loop = eventLoop();
         if (loop.inEventLoop()) {
-            ((AbstractUnsafe) unsafe()).shutdownOutput(promise);
+            ((AbstractUnsafe)unsafe()).shutdownOutput(promise);
         } else {
             loop.execute(new Runnable() {
                 @Override
                 public void run() {
-                    ((AbstractUnsafe) unsafe()).shutdownOutput(promise);
+                    ((AbstractUnsafe)unsafe()).shutdownOutput(promise);
                 }
             });
         }
@@ -252,7 +253,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
         if (shutdownOutputCause != null) {
             if (shutdownInputCause != null) {
                 logger.debug("Exception suppressed because a previous exception occurred.",
-                        shutdownInputCause);
+                    shutdownInputCause);
             }
             promise.setFailure(shutdownOutputCause);
         } else if (shutdownInputCause != null) {
@@ -261,6 +262,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             promise.setSuccess();
         }
     }
+
     private void shutdownInput0(final ChannelPromise promise) {
         try {
             // 关闭 Channel 数据的读取
@@ -380,17 +382,23 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
         // make a best effort to adjust as OS behavior changes.
         if (attempted == written) {
             if (attempted << 1 > oldMaxBytesPerGatheringWrite) {
-                ((NioSocketChannelConfig) config).setMaxBytesPerGatheringWrite(attempted << 1);
+                ((NioSocketChannelConfig)config).setMaxBytesPerGatheringWrite(attempted << 1);
             }
         } else if (attempted > MAX_BYTES_PER_GATHERING_WRITE_ATTEMPTED_LOW_THRESHOLD && written < attempted >>> 1) {
-            ((NioSocketChannelConfig) config).setMaxBytesPerGatheringWrite(attempted >>> 1);
+            ((NioSocketChannelConfig)config).setMaxBytesPerGatheringWrite(attempted >>> 1);
         }
     }
 
+    /**
+     * 循环自旋次数,合并{@link ChannelOutboundBuffer#flushedEntry} 链表,上所有节点的 {@link Entry#buf} , {@link Entry#bufs}, 写入channel
+     *
+     * @param in
+     * @throws Exception
+     */
     @Override
     protected void doWrite(ChannelOutboundBuffer in) throws Exception {
         SocketChannel ch = javaChannel();
-        // 获得自旋写入次数
+        // 获得自旋写入次数, 默认值16
         int writeSpinCount = config().getWriteSpinCount();
         do {
             // 内存队列为空，结束循环，直接返回
@@ -404,7 +412,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
             // 获得每次写入的最大字节数
             // Ensure the pending writes are made of ByteBufs only.
-            int maxBytesPerGatheringWrite = ((NioSocketChannelConfig) config).getMaxBytesPerGatheringWrite();
+            int maxBytesPerGatheringWrite = ((NioSocketChannelConfig)config).getMaxBytesPerGatheringWrite();
             // 从内存队列中，获得要写入的 ByteBuffer 数组
             ByteBuffer[] nioBuffers = in.nioBuffers(1024, maxBytesPerGatheringWrite);
             // 写入的 ByteBuffer 数组的个数
@@ -445,7 +453,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     // to check if the total size of all the buffers is non-zero.
                     // We limit the max amount to int above so cast is safe
                     long attemptedBytes = in.nioBufferSize();
-                    // 执行 NIO write 调用，写入多个 ByteBuffer 到对端
+                    // 执行 NIO write 调用，写入多个 ByteBuffer 到对端, 返回写入了多少字节, 从offset 开始
                     final long localWrittenBytes = ch.write(nioBuffers, 0, nioBufferCnt);
                     // 写入字节小于等于 0 ，说明 NIO Channel 不可写，所以注册 SelectionKey.OP_WRITE ，等待 NIO Channel 可写，并返回以结束循环
                     if (localWrittenBytes <= 0) {
@@ -454,8 +462,8 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     }
                     // TODO 芋艿 调整每次写入的最大字节数
                     // Casting to int is safe because we limit the total amount of data in the nioBuffers to int above.
-                    adjustMaxBytesPerGatheringWrite((int) attemptedBytes, (int) localWrittenBytes, maxBytesPerGatheringWrite);
-                    // 从内存队列中，移除已经写入的数据( 消息 )
+                    adjustMaxBytesPerGatheringWrite((int)attemptedBytes, (int)localWrittenBytes, maxBytesPerGatheringWrite);
+                    // 从内存队列中，移除已经写入的数据( 消息 ), 更新 flushEntry 链表的节点
                     in.removeBytes(localWrittenBytes);
                     // 写入次数减一
                     --writeSpinCount;
