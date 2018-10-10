@@ -102,11 +102,9 @@ public final class ChannelOutboundBuffer {
     // The Entry which represents the tail of the buffer
     private Entry tailEntry;
     /**
-     * 已 flush 但未写入对端的 Entry 数量
-     *
-     * {@link #addFlush()}
-     *
+     * 已添加到 {@link #flushedEntry} 但未写入对端的 Entry 数量
      * The number of flushed entries that are not written yet
+     * {@link #addFlush()}
      */
     private int flushed;
 
@@ -155,6 +153,7 @@ public final class ChannelOutboundBuffer {
     }
 
     /**
+     * unflushedEntry ... (entries) ... tailEntry
      * Add given message to this {@link ChannelOutboundBuffer}. The given {@link ChannelPromise} will be notified once
      * the message was written.
      */
@@ -183,6 +182,8 @@ public final class ChannelOutboundBuffer {
     }
 
     /**
+     * 将 unflushedEntry 链表上的Entry添加到 flushedEntry 链表上,同时清空 unflushedEntry
+     * flushedEntry  ... (entries) ... tailEntry
      * Add a flush to this {@link ChannelOutboundBuffer}. This means all previous added messages are marked as flushed
      * and so you will be able to handle them.
      */
@@ -498,6 +499,7 @@ public final class ChannelOutboundBuffer {
         int nioBufferCount = 0;
         // 获得当前线程的 NIO ByteBuffer 数组缓存。
         final InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+        // 获取 new ByteBuffer[1024], 用于存储待Flush 的 ByteBuffers
         ByteBuffer[] nioBuffers = NIO_BUFFERS.get(threadLocalMap);
         // 从 flushedEntry 节点，开始向下遍历
         Entry entry = flushedEntry;
@@ -507,14 +509,14 @@ public final class ChannelOutboundBuffer {
                 ByteBuf buf = (ByteBuf)entry.msg;
                 // 获得消息( 数据 )开始读取位置
                 final int readerIndex = buf.readerIndex();
-                // 获得消息( 数据 )可读取的字节数
+                // 每个Entry里的可读内容字节长度
                 final int readableBytes = buf.writerIndex() - readerIndex;
 
                 // 若无可读取的数据，忽略。
                 if (readableBytes > 0) {
-                    // 前半段，可读取的字节数，不能超过 maxBytes
-                    // 后半段，如果第一条数据，就已经超过 maxBytes ，那么只能“强行”读取，否则会出现一直无法读取的情况。
-                    if (maxBytes - readableBytes < nioBufferSize && nioBufferCount != 0) {
+                    // 如果第一个Entry的内容就超过maxBytes,可以容忍, 否则可能会一直卡这个Entry导致无法写入
+                    // 如果第一个Entry之后的内容+原有内容长度超过maxBytes, 那么放弃当前超标的Entry
+                    if (maxBytes < nioBufferSize + readableBytes && nioBufferCount != 0) {
                         // If the nioBufferSize + readableBytes will overflow maxBytes, and there is at least one entry
                         // we stop populate the ByteBuffer array. This is done for 2 reasons:
                         // 1. bsd/osx don't allow to write more bytes then Integer.MAX_VALUE with one writev(...) call
@@ -540,9 +542,11 @@ public final class ChannelOutboundBuffer {
                     int neededSpace = min(maxCount, nioBufferCount + count);
                     if (neededSpace > nioBuffers.length) {
                         nioBuffers = expandNioBufferArray(nioBuffers, neededSpace, nioBufferCount);
+                        // 将双倍扩容后的Buffer数组从新设置到ThreadLocal变量中
                         NIO_BUFFERS.set(threadLocalMap, nioBuffers);
                     }
                     // 初始化 Entry 节点的 buf / bufs 属性
+                    // 将 flushedEntry 链 上每个节点的buf/bufs 合并存入nioBuffers, 返回给Flush
                     if (count == 1) {
                         ByteBuffer nioBuf = entry.buf;
                         if (nioBuf == null) {
