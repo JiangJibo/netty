@@ -948,7 +948,7 @@ public final class ChannelOutboundBuffer {
     /**
      * 每条写入的数据 Entry
      */
-    static final class Entry {
+    public static final class Entry {
 
         /**
          * Recycler 对象，用于重用 Entry 对象
