@@ -349,7 +349,7 @@ public final class ChannelOutboundBuffer {
             // 释放消息( 数据 )相关的资源
             // only release message, notify and decrement if it was not canceled before.
             ReferenceCountUtil.safeRelease(msg);
-            // 通知 Promise 执行成功
+            // 通知 Promise 执行成功, 执行listen方法
             safeSuccess(promise);
             // 减少 totalPending 计数
             decrementPendingOutboundBytes(size, false, true);
@@ -424,8 +424,11 @@ public final class ChannelOutboundBuffer {
     }
 
     /**
+     * 根据写入到Channel的字节数,依次删除 {@link #flushedEntry} 里的节点, 同时执行Promise的Listen
      * Removes the fully written entries and update the reader index of the partially written entry.
      * This operation assumes all messages in this buffer is {@link ByteBuf}.
+     *
+     * @param writtenBytes 已经写入到Channel的字节数
      */
     public void removeBytes(long writtenBytes) {
         // 循环移除
@@ -966,7 +969,7 @@ public final class ChannelOutboundBuffer {
     /**
      * 每条写入的数据 Entry
      */
-    static final class Entry {
+    public static final class Entry {
 
         /**
          * Recycler 对象，用于重用 Entry 对象
