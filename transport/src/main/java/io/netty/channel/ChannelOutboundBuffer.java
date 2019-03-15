@@ -195,6 +195,7 @@ public final class ChannelOutboundBuffer {
         Entry entry = unflushedEntry;
         if (entry != null) {
             // 若 flushedEntry 为空，赋值为 unflushedEntry ，用于记录第一个( 开始 ) flush 的 Entry 。
+            // 也就是flush是逐批次的来,如果上一批次的数据还未发送完,那么当前批次的数据就不会挂到flushedEntry上
             if (flushedEntry == null) {
                 // there is no flushedEntry yet, so start with the entry
                 flushedEntry = entry;
@@ -228,6 +229,13 @@ public final class ChannelOutboundBuffer {
         incrementPendingOutboundBytes(size, true);
     }
 
+    /**
+     * 增加待flush的数据的总数, 如果总数> 64KB, 那么会设置unwritable
+     * 因为一直addMessage,但不flush, 会触发OOM 内存溢出
+     *
+     * @param size
+     * @param invokeLater
+     */
     private void incrementPendingOutboundBytes(long size, boolean invokeLater) {
         if (size == 0) {
             return;
@@ -242,6 +250,7 @@ public final class ChannelOutboundBuffer {
     }
 
     /**
+     * 当 待flush数据量< 32KB 时，打开可写开关
      * Decrement the pending bytes which will be written at some point.
      * This method is thread-safe!
      */
@@ -249,6 +258,13 @@ public final class ChannelOutboundBuffer {
         decrementPendingOutboundBytes(size, true, true);
     }
 
+    /**
+     * 当 待flush数据量< 32KB 时，打开可写开关
+     *
+     * @param size
+     * @param invokeLater
+     * @param notifyWritability
+     */
     private void decrementPendingOutboundBytes(long size, boolean invokeLater, boolean notifyWritability) {
         if (size == 0) {
             return;
@@ -387,6 +403,11 @@ public final class ChannelOutboundBuffer {
         return true; // 还有后续的 flush 的 Entry 节点
     }
 
+    /**
+     * 偏移flushedEntry = e.next
+     *
+     * @param e
+     */
     private void removeEntry(Entry e) {
         // 已移除完已 flush 的 Entry 节点，置空 flushedEntry、tailEntry、unflushedEntry 。
         if (--flushed == 0) {

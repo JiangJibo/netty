@@ -873,13 +873,13 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             int selectCnt = 0; // cnt 为 count 的缩写
             // 记录当前时间，单位：纳秒
             long currentTimeNanos = System.nanoTime();
-            // 计算 select 截止时间，单位：纳秒。
+            // 计算 select 截止时间，单位：纳秒, 默认是当前时间之后一秒钟
             long selectDeadLineNanos = currentTimeNanos + delayNanos(currentTimeNanos);
 
             for (; ; ) {
                 // 计算本次 select 的超时时长，单位：毫秒。
                 // + 500000L 是为了四舍五入
-                // / 1000000L 是为了纳秒转为毫秒
+                // / 1000000L 是为了纳秒转为毫秒, 默认值为1000ms
                 long timeoutMillis = (selectDeadLineNanos - currentTimeNanos + 500000L) / 1000000L;
                 // 如果超时时长，则结束 select
                 if (timeoutMillis <= 0) {
@@ -938,7 +938,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (time - TimeUnit.MILLISECONDS.toNanos(timeoutMillis) >= currentTimeNanos) {
                     // timeoutMillis elapsed without anything selected.
                     selectCnt = 1;
-                    // 不符合 select 超时的提交，若 select 次数到达重建 Selector 对象的上限，进行重建
+                    // 不符合 select 超时的提交，若 select 次数到达重建 Selector 对象的上限(512次)，进行重建
                 } else if (SELECTOR_AUTO_REBUILD_THRESHOLD > 0 && selectCnt >= SELECTOR_AUTO_REBUILD_THRESHOLD) {
                     // The selector returned prematurely many times in a row.
                     // Rebuild the selector to work around the problem.
